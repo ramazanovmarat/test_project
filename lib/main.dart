@@ -71,14 +71,17 @@ class _MainHomeState extends State<MainHome> {
 
   final FirebaseRemoteConfig firebaseRemoteConfig = FirebaseRemoteConfig.instance;
 
+
+
   // проверяем сохранена ли локально ссылка
   Future checkingPath() async {
     final getUrl = firebaseRemoteConfig.getString("Url");
     var prefs = await SharedPreferences.getInstance();
     prefs.setString("key", getUrl);
-    final path = prefs.getString("key");
+    final path = '${prefs.getString("key")}';
+    print('Path: $path');
 
-    if(path.toString().isEmpty) {
+    if(path.isEmpty) {
       return loadFire();
     } else {
       return WebView(

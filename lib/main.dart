@@ -71,17 +71,11 @@ class _MainHomeState extends State<MainHome> {
 
   final FirebaseRemoteConfig firebaseRemoteConfig = FirebaseRemoteConfig.instance;
 
-
-
   // проверяем сохранена ли локально ссылка
   Future checkingPath() async {
-    final getUrl = firebaseRemoteConfig.getString("Url");
-    var prefs = await SharedPreferences.getInstance();
-    prefs.setString("key", getUrl);
-    final path = '${prefs.getString("key")}';
-    print('Path: $path');
-
-    if(path.isEmpty) {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final path = prefs.getString("key");
+    if(path == null) {
       return loadFire();
     } else {
       return WebView(
@@ -97,8 +91,7 @@ class _MainHomeState extends State<MainHome> {
     AndroidDeviceInfo androidDeviceInfo = await deviceInfo.androidInfo;
 
     final getUrl = firebaseRemoteConfig.getString("Url");
-    var prefs = await SharedPreferences.getInstance();
-    prefs.getString("key");
+    SharedPreferences prefs = await SharedPreferences.getInstance();
 
     if(getUrl.isEmpty || androidDeviceInfo.brand == 'google' || cards == null) {
 
@@ -145,6 +138,7 @@ class _MainHomeState extends State<MainHome> {
         javascriptMode: JavascriptMode.unrestricted,
         initialUrl: firebaseRemoteConfig.getString("Url"),
       );
+
     }
   }
 
@@ -158,6 +152,7 @@ class _MainHomeState extends State<MainHome> {
     super.initState();
     init();
     loadFire();
+    checkingPath();
   }
 
   // Получаем данные сим карты

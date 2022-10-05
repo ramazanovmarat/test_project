@@ -41,8 +41,7 @@ dependencies:
   webview_flutter: ^3.0.4
   shared_preferences: ^2.0.15
   device_info_plus: ^4.1.2
-  sim_data: ^0.0.2
-  permission_handler: ^10.0.2
+  flutter_sim_country_code: ^0.1.2
 
 dev_dependencies:
   flutter_test:

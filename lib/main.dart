@@ -1,13 +1,14 @@
-
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/material.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/services.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:sim_data/sim_data.dart';
+import 'package:flutter_sim_country_code/flutter_sim_country_code.dart';
+import 'package:test_project/news_detail.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'news_model.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -86,49 +87,51 @@ class _MainHomeState extends State<MainHome> {
   }
 
   Future loadFire() async {
-    var cards = _simData?.cards;
     DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
     AndroidDeviceInfo androidDeviceInfo = await deviceInfo.androidInfo;
 
     final getUrl = firebaseRemoteConfig.getString("Url");
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    if(getUrl.isEmpty || androidDeviceInfo.brand == 'google' || cards == null) {
+    if(getUrl.isEmpty || androidDeviceInfo.brand == 'google' || _platformVersion!.isEmpty) {
 
       return ListView.builder(
-          itemCount: 10,
+          itemCount: news.length,
           itemBuilder: (BuildContext context, int index) {
-        return Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Row(
-            children: [
-              const Image(
-                image: NetworkImage('https://ss.sport-express.ru/userfiles/materials/182/1822592/volga.jpg'),
-                width: 180,
-              ),
-              Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Column(
-                      children: const [
-                        Text(
-                          '5:1! Werder defeated Borussia Gladbach',
-                          style: TextStyle(
-                              color: Colors.blue,
-                              fontWeight: FontWeight.bold),
-                          maxLines: 3,
-                        ),
-                        SizedBox(height: 10),
-                        Text(
-                          'Werder defeated Borussia Glabha with a score of 5:1 in the match of the 8th round of the German championship.',
-                          maxLines: 4,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  )
-              ),
-            ],
+        return GestureDetector(
+          onTap: () {
+            Navigator.of(context).push(MaterialPageRoute(builder: (context) => NewsDetail(sportsNews: news[index],)));
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              children: [
+                Image(
+                  image: NetworkImage(news[index].image),
+                  width: 180,
+                ),
+                Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        children: [
+                          Text(news[index].title,
+                            style: const TextStyle(
+                                color: Colors.blue,
+                                fontWeight: FontWeight.bold),
+                            maxLines: 3,
+                          ),
+                          const SizedBox(height: 10),
+                          Text(news[index].description,
+                            maxLines: 4,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    )
+                ),
+              ],
+            ),
           ),
         );
       });
@@ -142,51 +145,29 @@ class _MainHomeState extends State<MainHome> {
     }
   }
 
-
-
-
-  SimData? _simData;
-
   @override
   void initState() {
     super.initState();
-    init();
+    initPlatformState();
     loadFire();
     checkingPath();
   }
 
-  // Получаем данные сим карты
-  Future<void> init() async {
-    SimData simData;
-    try {
-      var status = await Permission.phone.status;
-      if (!status.isGranted) {
-        bool isGranted = await Permission.phone.request().isGranted;
-        if (!isGranted) return;
-      }
-      simData = await SimDataPlugin.getSimData();
-      setState(() {
-        _simData = simData;
-      });
-      void printSimCardsData() async {
-        try {
-          SimData simData = await SimDataPlugin.getSimData();
-          for (var s in simData.cards) {
-            // ignore: avoid_print
-            print('Serial number: ${s.serialNumber}');
-          }
-        } on PlatformException catch (e) {
-          debugPrint("error! code: ${e.code} - message: ${e.message}");
-        }
-      }
+  String? _platformVersion;
 
-      printSimCardsData();
-    } catch (e) {
-      debugPrint(e.toString());
-      setState(() {
-        _simData = null;
-      });
+ // проверка наличия симкарты
+  Future<void> initPlatformState() async {
+    String? platformVersion;
+    try {
+      platformVersion = await FlutterSimCountryCode.simCountryCode;
+    } on PlatformException {
+      platformVersion = 'Failed to get sim country code.';
     }
+    if (!mounted) return;
+
+    setState(() {
+      _platformVersion = platformVersion;
+    });
   }
 
 

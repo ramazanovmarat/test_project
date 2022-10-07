@@ -1,3 +1,4 @@
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/material.dart';
@@ -7,8 +8,10 @@ import 'package:flutter_sim_country_code/flutter_sim_country_code.dart';
 import 'package:test_project/news_detail.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'json.dart';
 import 'news_model.dart';
+
+const String remote_key = 'Url';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,15 +19,19 @@ void main() async {
   runApp(const MyApp());
 }
 
+class DataValueNotifier extends ValueNotifier<ProjectResponse?> {
+  DataValueNotifier() : super(null);
+}
+
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       title: 'Sports News',
       debugShowCheckedModeBanner: false,
-      home: Home(),
+      home: Home()
     );
   }
 }
@@ -75,13 +82,20 @@ class _MainHomeState extends State<MainHome> {
   // проверяем сохранена ли локально ссылка
   Future checkingPath() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    final path = prefs.getString("key");
+    final path = prefs.getString(remote_key);
     if(path == null) {
       return loadFire();
     } else {
-      return WebView(
-        javascriptMode: JavascriptMode.unrestricted,
-        initialUrl: firebaseRemoteConfig.getString("Url"),
+      return WillPopScope(
+        onWillPop: () async {
+          return false;
+        },
+        child: Scaffold(
+          body: WebView(
+            javascriptMode: JavascriptMode.unrestricted,
+            initialUrl: firebaseRemoteConfig.getString(remote_key),
+          ),
+        ),
       );
     }
   }
@@ -90,58 +104,66 @@ class _MainHomeState extends State<MainHome> {
     DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
     AndroidDeviceInfo androidDeviceInfo = await deviceInfo.androidInfo;
 
-    final getUrl = firebaseRemoteConfig.getString("Url");
+    final getUrl = firebaseRemoteConfig.getString(remote_key);
+
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    if(getUrl.isEmpty || androidDeviceInfo.brand == 'google' || _platformVersion!.isEmpty) {
-
+    if (getUrl.isEmpty || androidDeviceInfo.brand == 'google' || _platformVersion!.isEmpty) {
       return ListView.builder(
           itemCount: news.length,
           itemBuilder: (BuildContext context, int index) {
-        return GestureDetector(
-          onTap: () {
-            Navigator.of(context).push(MaterialPageRoute(builder: (context) => NewsDetail(sportsNews: news[index],)));
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              children: [
-                Image(
-                  image: NetworkImage(news[index].image),
-                  width: 180,
-                ),
-                Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        children: [
-                          Text(news[index].title,
-                            style: const TextStyle(
-                                color: Colors.blue,
-                                fontWeight: FontWeight.bold),
-                            maxLines: 3,
+            return GestureDetector(
+              onTap: () {
+                Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) =>
+                        NewsDetail(sportsNews: news[index],)));
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  children: [
+                    Image(
+                      image: NetworkImage(news[index].image),
+                      width: 180,
+                    ),
+                    Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Column(
+                            children: [
+                              Text(news[index].title,
+                                style: const TextStyle(
+                                    color: Colors.blue,
+                                    fontWeight: FontWeight.bold),
+                                maxLines: 3,
+                              ),
+                              const SizedBox(height: 10),
+                              Text(news[index].description,
+                                maxLines: 4,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 10),
-                          Text(news[index].description,
-                            maxLines: 4,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    )
+                        )
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-        );
-      });
+              ),
+            );
+          });
     } else {
       prefs.setString("key", getUrl);
-      return WebView(
-        javascriptMode: JavascriptMode.unrestricted,
-        initialUrl: firebaseRemoteConfig.getString("Url"),
+      return WillPopScope(
+        onWillPop: () async {
+          return false;
+        },
+        child: Scaffold(
+          body: WebView(
+            javascriptMode: JavascriptMode.unrestricted,
+            initialUrl: getUrl,
+          )
+        ),
       );
-
     }
   }
 
@@ -170,29 +192,22 @@ class _MainHomeState extends State<MainHome> {
     });
   }
 
-
-
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        return false;
-      },
-      child: SafeArea(
-        child: Scaffold(
-          body: Container(
-            height: MediaQuery.of(context).size.height,
-            width: MediaQuery.of(context).size.width,
-            child: FutureBuilder(
-                future: checkingPath(),
-                builder: (BuildContext context,
-                    AsyncSnapshot snapshot) {
-                  if(snapshot.hasData) {
-                    return snapshot.data;
-                  }
-                  return const Center(child: CircularProgressIndicator());
-                }),
-          ),
+    return SafeArea(
+      child: Scaffold(
+        body: Container(
+          height: MediaQuery.of(context).size.height,
+          width: MediaQuery.of(context).size.width,
+          child: FutureBuilder(
+              future: checkingPath(),
+              builder: (BuildContext context,
+                  AsyncSnapshot snapshot) {
+                if(snapshot.hasData) {
+                  return snapshot.data;
+                }
+                return const Center(child: CircularProgressIndicator());
+              }),
         ),
       ),
     );

@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_sim_country_code/flutter_sim_country_code.dart';
 import 'package:test_project/news_detail.dart';
 import 'package:test_project/page.dart';
+import 'package:test_project/shared_pref.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'news_model.dart';
@@ -14,10 +15,10 @@ import 'news_model.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  runApp(MyPageDemo());
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  final path = prefs.getString("key");
+  runApp(path == null ? MyPageDemo() : MyWebViewPage(rem: path));
 }
-
-
 
 // class MyApp extends StatelessWidget {
 //   const MyApp({Key? key}) : super(key: key);

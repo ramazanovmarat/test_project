@@ -1,33 +1,33 @@
 {
   "project_info": {
-    "project_number": "22350436162",
-    "project_id": "test-project-fdbd1",
-    "storage_bucket": "test-project-fdbd1.appspot.com"
+    "project_number": "298458567343",
+    "project_id": "dolod-5e44c",
+    "storage_bucket": "dolod-5e44c.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:22350436162:android:6fda841294367516275adb",
+        "mobilesdk_app_id": "1:298458567343:android:9380c2ec29905016ec3a5a",
         "android_client_info": {
-          "package_name": "com.example.test_project"
+          "package_name": "steatiomsi.lusre"
         }
       },
       "oauth_client": [
         {
-          "client_id": "22350436162-ruii4jhc2d1hn7mthgl2pkug1k2qlbfg.apps.googleusercontent.com",
+          "client_id": "298458567343-g0kjmftdrvrruna8i7fc7qafjr21958a.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyCby13bvFE8OorTBz2BFb5GiN6NfytQ1wE"
+          "current_key": "AIzaSyBAie9UJ6L1reQdGA9nL3E6Dj0B5eSOgvg"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "22350436162-ruii4jhc2d1hn7mthgl2pkug1k2qlbfg.apps.googleusercontent.com",
+              "client_id": "298458567343-g0kjmftdrvrruna8i7fc7qafjr21958a.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

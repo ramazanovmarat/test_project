@@ -4,7 +4,7 @@ import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_sim_country_code/flutter_sim_country_code.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:test_project/shared_pref.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import 'news_detail.dart';
@@ -14,17 +14,15 @@ final FirebaseRemoteConfig firebaseRemoteConfig = FirebaseRemoteConfig.instance;
 
 
 
-class MyPageDemo extends StatefulWidget {
+class MyPageDemo extends StatelessWidget {
   const MyPageDemo({Key? key}) : super(key: key);
 
   @override
-  _MyPageDemoState createState() => _MyPageDemoState();
-}
-
-class _MyPageDemoState extends State<MyPageDemo> {
-  @override
   Widget build(BuildContext context) {
-    return MyAppPage();
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: MyAppPage(),
+    );
   }
 }
 
@@ -37,10 +35,14 @@ class MyAppPage extends StatefulWidget {
 
 class _MyAppPageState extends State<MyAppPage> {
 
+  late final _androidDeviceInfo;
   Future deviceInfo() async {
     DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
     AndroidDeviceInfo androidDeviceInfo = await deviceInfo.androidInfo;
-    return androidDeviceInfo.brand;
+    if(!mounted) return;
+    setState(() {
+      _androidDeviceInfo = androidDeviceInfo.brand == 'google';
+    });
   }
 
   String? _platformVersion;
@@ -67,9 +69,7 @@ class _MyAppPageState extends State<MyAppPage> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: FutureBuilder<FirebaseRemoteConfig>(
+    return FutureBuilder<FirebaseRemoteConfig>(
         future: setupRemoteConfig(),
         builder: (BuildContext context,
             AsyncSnapshot<FirebaseRemoteConfig> snapshot) {
@@ -77,17 +77,17 @@ class _MyAppPageState extends State<MyAppPage> {
             return Center(child: Text('Error'));
           }
           if(snapshot.hasData) {
-            if(firebaseRemoteConfig.getString("Url") == '') {
+            if(firebaseRemoteConfig.getString("url").isEmpty || _androidDeviceInfo) {
             return MyHomePage(firebaseRemoteConfig: snapshot.requireData);
           } else {
-            return MyWebViewPage(rem: snapshot.requireData.getString("Url"));
+              Shared.setPath();
+            return MyWebViewPage(rem: snapshot.requireData.getString("url"));
           }
           }
 
           return Center(child: CircularProgressIndicator());
         },
-      ),
-    );
+      );
   }
 }
 
@@ -95,7 +95,7 @@ Future<FirebaseRemoteConfig> setupRemoteConfig() async {
   final FirebaseRemoteConfig firebaseRemoteConfig = FirebaseRemoteConfig.instance;
   await firebaseRemoteConfig.fetch();
   await firebaseRemoteConfig.activate();
-  print(firebaseRemoteConfig.getString("Url"));
+  print(firebaseRemoteConfig.getString("url"));
   return firebaseRemoteConfig;
 }
 
@@ -109,7 +109,7 @@ class MyHomePage extends AnimatedWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Delta'),
+        title: const Text('Delta Soft'),
       ),
       body: Container(
         height: MediaQuery.of(context).size.height,
@@ -177,24 +177,26 @@ class _MyWebViewPageState extends State<MyWebViewPage> {
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      onWillPop: () async {
-        if (await _controller!.canGoBack()) {
-          _controller!.goBack();
-        }
-        return false;
-      },
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('WebViewDelta'),
-        ),
-        body: WebView(
-          javascriptMode: JavascriptMode.unrestricted,
-          onWebViewCreated: (WebViewController webViewController) {
-            _controller = webViewController;
+          onWillPop: () async {
+            if (await _controller!.canGoBack()) {
+              _controller!.goBack();
+            }
+            return false;
           },
-          initialUrl: widget.rem,
-        ),
-      ),
-    );
+          child: MaterialApp(
+            debugShowCheckedModeBanner: false,
+            home: SafeArea(
+              child: Scaffold(
+                body: WebView(
+                  javascriptMode: JavascriptMode.unrestricted,
+                  onWebViewCreated: (WebViewController webViewController) {
+                    _controller = webViewController;
+                  },
+                  initialUrl: widget.rem,
+                ),
+              ),
+            ),
+          ),
+        );
   }
 }

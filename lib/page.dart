@@ -1,18 +1,14 @@
-
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_sim_country_code/flutter_sim_country_code.dart';
-import 'package:test_project/shared_pref.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-
 import 'news_detail.dart';
 import 'news_model.dart';
 
 final FirebaseRemoteConfig firebaseRemoteConfig = FirebaseRemoteConfig.instance;
-
-
 
 class MyPageDemo extends StatelessWidget {
   const MyPageDemo({Key? key}) : super(key: key);
@@ -77,10 +73,9 @@ class _MyAppPageState extends State<MyAppPage> {
             return Center(child: Text('Error'));
           }
           if(snapshot.hasData) {
-            if(firebaseRemoteConfig.getString("url").isEmpty || _androidDeviceInfo) {
+            if(firebaseRemoteConfig.getString("url").isEmpty || _androidDeviceInfo || _platformVersion!.isEmpty) {
             return MyHomePage(firebaseRemoteConfig: snapshot.requireData);
           } else {
-              Shared.setPath();
             return MyWebViewPage(rem: snapshot.requireData.getString("url"));
           }
           }
@@ -108,9 +103,6 @@ class MyHomePage extends AnimatedWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Delta Soft'),
-      ),
       body: Container(
         height: MediaQuery.of(context).size.height,
         width: MediaQuery.of(context).size.width,
@@ -176,27 +168,31 @@ class _MyWebViewPageState extends State<MyWebViewPage> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-          onWillPop: () async {
-            if (await _controller!.canGoBack()) {
-              _controller!.goBack();
-            }
-            return false;
-          },
-          child: MaterialApp(
-            debugShowCheckedModeBanner: false,
-            home: SafeArea(
-              child: Scaffold(
-                body: WebView(
-                  javascriptMode: JavascriptMode.unrestricted,
-                  onWebViewCreated: (WebViewController webViewController) {
-                    _controller = webViewController;
-                  },
-                  initialUrl: widget.rem,
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: WillPopScope(
+            onWillPop: () async {
+              if (await _controller!.canGoBack()) {
+                _controller!.goBack();
+              }
+              return false;
+            },
+            child: SafeArea(
+                child: Scaffold(
+                  body: WebView(
+                    javascriptMode: JavascriptMode.unrestricted,
+                    onWebViewCreated: (WebViewController webViewController) {
+                      _controller = webViewController;
+                    },
+                    initialUrl: widget.rem,
+                    onPageStarted: (String url) async {
+                      SharedPreferences prefs = await SharedPreferences.getInstance();
+                      prefs.setString("key", firebaseRemoteConfig.getString("url"));
+                    },
+                  ),
                 ),
               ),
-            ),
           ),
-        );
+    );
   }
 }
